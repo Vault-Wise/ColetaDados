@@ -6,13 +6,10 @@ import mysql.connector
 
 #Conexão com o banco
 mydb = mysql.connector.connect(
-    user='root', 
-    password='43589543Lu', 
+    user='capturaDados', 
+    password='SPTech#2024', 
     host='localhost',
-    #user = '',
-    #password='',
-    #host='localhost',
-    database='vaultwise',
+    database='VaultWise',
     port='3306'
 )
 
@@ -59,7 +56,7 @@ while True:
     time.sleep(intervalo)
 
     #Select para verificação da inserção do equipamento
-    instrucaoVerEquipamento = "SELECT * FROM equipamento WHERE nome_equipamento = %s" 
+    instrucaoVerEquipamento = "SELECT * FROM Equipamento WHERE nomeEquipamento = %s" 
     cursor.execute(instrucaoVerEquipamento, ([nomeMaquina]))
 
     #Função para utilizar o resultado do cursor, se não da erro de unread result
@@ -68,12 +65,12 @@ while True:
 
     #Função para verificar (apartir do select de cima) se já existe um equipamento com esse nome para fazer inserção automática dele
     if cursor.rowcount < 1: 
-        instrucaoEquipamento= "INSERT INTO equipamento VALUES (default, %s, %s, '%s GB', '%s GB', null);"
+        instrucaoEquipamento= "INSERT INTO Equipamento VALUES (default, %s, %s, '%s GB', '%s GB', null);"
         valuesEquipamento = (nomeMaquina, sistemaOperacional,round(disco.total/pow(10, 9), 0), round(memoria.total/pow(10, 9),0))
         cursor.execute(instrucaoEquipamento, valuesEquipamento) 
         mydb.commit()
 
-    instrucaoID = "SELECT id_equipamento FROM equipamento WHERE nome_equipamento LIKE %s"
+    instrucaoID = "SELECT idEquipamento FROM Equipamento WHERE nomeEquipamento LIKE %s"
     valuesID = ([nomeMaquina])
     cursor.execute(instrucaoID, valuesID)
     idEquipamento_tupla = cursor.fetchone()
@@ -83,11 +80,11 @@ while True:
 
     #Função para enviar os dados capturados com a informação de que estão em alerta
     if porcent_cpu > 80 or memoria.percent > 80:  
-        instrucao = "INSERT INTO dado VALUES (default, %s, %s, %s, %s, %s, %s, 'Alerta', default, %s, 1);"
+        instrucao = "INSERT INTO Dado VALUES (default, %s, %s, %s, %s, %s, %s, 'Alerta', default, %s, 1);"
         values = (freq_cpu, porcent_cpu,memoria.used, memoria.percent, disco.used, disco.percent, idEquipamento)
         cursor.execute(instrucao, values)
     else:
-        instrucao = "INSERT INTO dado VALUES (default, %s, %s, %s, %s, %s, %s, 'Seguro', default, %s, 1);"
+        instrucao = "INSERT INTO Dado VALUES (default, %s, %s, %s, %s, %s, %s, 'Seguro', default, %s, 1);"
         values = (freq_cpu, porcent_cpu,memoria.used, memoria.percent, disco.used, disco.percent, idEquipamento)
         cursor.execute(instrucao, values)
 
