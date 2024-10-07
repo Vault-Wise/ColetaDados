@@ -13,81 +13,73 @@ mydb = mysql.connector.connect(
     port='3306'
 )
 
-nomeMaquina = gethostname()
-sistemaOperacional = platform.system()
-intervalo = 2 #setando o intervalo da captura
-
 cursor = mydb.cursor()
 
+nomeMaquina = gethostname()
+sistemaOperacional = platform.system()
+
+intervalo = 2 
+
+if(sistemaOperacional == "Windows"):
+    disco = psutil.disk_usage('C:\\')
+else:
+    disco = psutil.disk_usage('/')
+
+freqTotalProcessador = round(psutil.cpu_freq().max, 2)
+memortiaTotal = round(psutil.virtual_memory().total/pow(10, 9),0)
+discoTotal = round(disco.total/pow(10, 9), 0)
+
+cursor.execute(f"SELECT * FROM CaixaEletronico WHERE nomeEquipamento = '{nomeMaquina}'")
+
+for i in cursor.fetchall():
+    print(i)
+
+if cursor.rowcount < 1: 
+    cursor.execute(f"INSERT INTO CaixaEletronico VALUES (default, '{nomeMaquina}', '{sistemaOperacional}', {memortiaTotal}, {discoTotal}, {freqTotalProcessador}, 1)") 
+    mydb.commit()
+
+cursor.execute(f"SELECT idCaixa FROM CaixaEletronico WHERE nomeEquipamento LIKE '{nomeMaquina}'")
+idEquipamento_tupla = cursor.fetchone()
+idEquipamento = idEquipamento_tupla[0]
+
 while True:
-    #Variáveis de captura dos dados
-    
     porcent_cpu = psutil.cpu_percent()
     memoria = psutil.virtual_memory()
-    freq_cpu = psutil.cpu_freq().current
+    freq_cpu = psutil.cpu_freq()
+    rede = psutil.net_io_counters()
+    tempo_atividade = psutil.boot_time()
+    rede = psutil.net_io_counters()
 
-    if(sistemaOperacional == "Windows"):
-        disco = psutil.disk_usage('C:\\')
-    else:
-        disco = psutil.disk_usage('/')
-    
+    redeMB = ((rede.bytes_recv - rede.bytes_sent) * pow(10, -6))/ 60
+
+    tempo_atual = time.time()
+
+    uptime_s = tempo_atual - tempo_atividade
 
     print(""" 
     DADOS ARMAZENADOS
           
     (Intervalo de {:d} s)
           
-    CPU:      
+    CPU (Freqência total = {:.2f} MHz):      
     Porcentagem de uso da CPU: {:.2f}%
     Freq CPU: {:f}
     
-    Memória (total = {:.2f} GB):
+    Memória (Total = {:.2f} GB):
     Porcentagem de uso memória RAM: {:.1f}
     Memoria Usada: {:f} GB
           
-    Disco Rígido (total = {:.2f} GB): 
+    Disco Rígido (Total = {:.2f} GB): 
     Porcentagem de uso do disco: {:.1f}%
     Disco usado: {:f} 
           
     Pressione Ctrl+C para encerrar a captura
-    """.format(intervalo, porcent_cpu, freq_cpu,  memoria.total/pow(10, 9), memoria.used, memoria.percent, disco.total/pow(10, 9), disco.percent, disco.used))
+    """.format(intervalo, freq_cpu.max, porcent_cpu, freq_cpu.current,  memoria.total/pow(10, 9), memoria.used, memoria.percent, disco.total/pow(10, 9), disco.percent, disco.used))
 
     #Tempo de captura de dados
     time.sleep(intervalo)
 
-    #Select para verificação da inserção do equipamento
-    instrucaoVerEquipamento = "SELECT * FROM Equipamento WHERE nomeEquipamento = %s" 
-    cursor.execute(instrucaoVerEquipamento, ([nomeMaquina]))
-
-    #Função para utilizar o resultado do cursor, se não da erro de unread result
-    for row in cursor:  
-        print(row)
-
-    #Função para verificar (apartir do select de cima) se já existe um equipamento com esse nome para fazer inserção automática dele
-    if cursor.rowcount < 1: 
-        instrucaoEquipamento= "INSERT INTO Equipamento VALUES (default, %s, %s, '%s GB', '%s GB', null);"
-        valuesEquipamento = (nomeMaquina, sistemaOperacional,round(disco.total/pow(10, 9), 0), round(memoria.total/pow(10, 9),0))
-        cursor.execute(instrucaoEquipamento, valuesEquipamento) 
-        mydb.commit()
-
-    instrucaoID = "SELECT idEquipamento FROM Equipamento WHERE nomeEquipamento LIKE %s"
-    valuesID = ([nomeMaquina])
-    cursor.execute(instrucaoID, valuesID)
-    idEquipamento_tupla = cursor.fetchone()
-
-    #Seleção do id selecionado
-    idEquipamento = idEquipamento_tupla[0]
-
-    #Função para enviar os dados capturados com a informação de que estão em alerta
-    if porcent_cpu > 80 or memoria.percent > 80:  
-        instrucao = "INSERT INTO Dado VALUES (default, %s, %s, %s, %s, %s, %s, 'Alerta', default, %s, 1);"
-        values = (freq_cpu, porcent_cpu,memoria.used, memoria.percent, disco.used, disco.percent, idEquipamento)
-        cursor.execute(instrucao, values)
-    else:
-        instrucao = "INSERT INTO Dado VALUES (default, %s, %s, %s, %s, %s, %s, 'Seguro', default, %s, 1);"
-        values = (freq_cpu, porcent_cpu,memoria.used, memoria.percent, disco.used, disco.percent, idEquipamento)
-        cursor.execute(instrucao, values)
-
+    cursor.execute(f"INSERT INTO Registro VALUES (DEFAULT, ,{round(disco.percent, 2)}, {round(memoria.percent, 2)}, {round(porcent_cpu, 2)}, {round(memoria.used /pow(10,9), 2)}, {round(disco.used /pow(10,9), 2)}, {round(freq_cpu.current)}, {round(redeMB, 2)}, {uptime_s}, {idEquipamento})")
     mydb.commit()
 
 cursor.close()
