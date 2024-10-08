@@ -3,6 +3,15 @@ import time
 from socket import gethostname
 import platform
 import mysql.connector
+from atlassian import Jira
+from requests import HTTPError
+
+#Conexão com o Jira
+jira = Jira(
+    url = "https://vault-wise.atlassian.net", #URL DA EMPRESA
+    username = "nicolas.lopes@sptech.school", #EMAIL
+    password = "-" #TOKEN
+)
 
 #Conexão com o banco
 mydb = mysql.connector.connect(
@@ -42,6 +51,10 @@ cursor.execute(f"SELECT idCaixa FROM CaixaEletronico WHERE nomeEquipamento LIKE 
 idEquipamento_tupla = cursor.fetchone()
 idEquipamento = idEquipamento_tupla[0]
 
+repeticao_CPU_RAM = 0
+repeticao_CPU = 0
+repeticao_RAM = 0
+
 while True:
     porcent_cpu = psutil.cpu_percent()
     memoria = psutil.virtual_memory()
@@ -72,15 +85,87 @@ while True:
     Disco Rígido (Total = {:.2f} GB): 
     Porcentagem de uso do disco: {:.1f}%
     Disco usado: {:f} 
-          
+    
+    {:d}
     Pressione Ctrl+C para encerrar a captura
-    """.format(intervalo, freq_cpu.max, porcent_cpu, freq_cpu.current,  memoria.total/pow(10, 9), memoria.used, memoria.percent, disco.total/pow(10, 9), disco.percent, disco.used))
+    """.format(intervalo, freq_cpu.max, porcent_cpu, freq_cpu.current,  memoria.total/pow(10, 9), memoria.used, memoria.percent, disco.total/pow(10, 9), disco.percent, disco.used, repeticao_RAM))
 
     #Tempo de captura de dados
     time.sleep(intervalo)
 
-    cursor.execute(f"INSERT INTO Registro VALUES (DEFAULT, ,{round(disco.percent, 2)}, {round(memoria.percent, 2)}, {round(porcent_cpu, 2)}, {round(memoria.used /pow(10,9), 2)}, {round(disco.used /pow(10,9), 2)}, {round(freq_cpu.current)}, {round(redeMB, 2)}, {uptime_s}, {idEquipamento})")
+    cursor.execute(f"INSERT INTO Registro VALUES (DEFAULT, DEFAULT,{round(disco.percent, 2)}, {round(memoria.percent, 2)}, {round(porcent_cpu, 2)}, {round(memoria.used /pow(10,9), 2)}, {round(disco.used /pow(10,9), 2)}, {round(freq_cpu.current)}, {round(redeMB, 2)}, {uptime_s}, {idEquipamento})")
     mydb.commit()
+
+    cursor.execute(f"SELECT idRegistro FROM Registro ORDER BY idRegistro DESC LIMIT 1")
+    idRegistro_tupla = cursor.fetchone()
+    idRegistro = idRegistro_tupla[0]
+
+    if(round(porcent_cpu, 2) > 80 and round(memoria.percent, 2) > 80):
+        cursor.execute(f"INSERT INTO Alerta VALUES (DEFAULT, 'Memória e CPU', 'Ambos acima de 80%', {idRegistro}, {idEquipamento})")
+        mydb.commit()
+        repeticao_CPU_RAM+=1
+
+        if(repeticao_CPU_RAM >= 5):
+                    
+                    jira.issue_create(
+                fields={
+                    'project': {
+                        'key': 'VAULT' #SIGLA DO PROJETO
+                    },
+                    'summary': 'Alerta de CPU e RAM',
+                    'description': 'CPU e RAM acima da média, necessario olhar com atenção esse Caixa em específico caso precise de manutenção em breve',
+                    'issuetype': {
+                        "name": "Task"
+                    },
+                }
+            )
+                    repeticao_CPU_RAM=0
+
+    elif (round(memoria.percent, 2) > 80):
+        cursor.execute(f"INSERT INTO Alerta VALUES (DEFAULT, 'Memória', 'Memória RAM acima de 80%', {idRegistro}, {idEquipamento})")
+        mydb.commit()
+        repeticao_RAM+=1
+
+        if(repeticao_RAM >= 5):
+                    try:
+                        jira.issue_create(
+                    fields={
+                        'project': {
+                            'key': 'VAULT' #SIGLA DO PROJETO
+                        },
+                        'summary': 'Alerta de RAM',
+                        'description': 'Memória RAM acima da média, analisar comportamento estranho e verificar se é frequente',
+                        'issuetype': {
+                            "name": "Task"
+                        },
+                    }
+                )
+                    except HTTPError as e:
+                        print(e.response.text)
+
+                    repeticao_RAM=0
+
+    elif(round(porcent_cpu, 2) > 80):
+        cursor.execute(f"INSERT INTO Alerta VALUES (DEFAULT, 'CPU', 'CPU acima de 80%', {idRegistro}, {idEquipamento})")
+        mydb.commit()
+        repeticao_CPU+=1
+
+        if(repeticao_CPU >= 5):
+                    
+                    jira.issue_create(
+                fields={
+                    'project': {
+                        'key': 'VAULT' #SIGLA DO PROJETO
+                    },
+                    'summary': 'Alerta de CPU',
+                    'description': 'Processador acima da média, possível ataque no Caixa ou erro de Hardware.',
+                    'issuetype': {
+                        "name": "Task"
+                    },
+                }
+            )
+                    repeticao_CPU=0
+        
 
 cursor.close()
 mydb.close()
