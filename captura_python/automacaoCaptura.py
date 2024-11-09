@@ -8,8 +8,8 @@ from requests import HTTPError
 
 #Conexão com o Jira
 jira = Jira(
-    url = "https://vault-wise.atlassian.net", #URL DA EMPRESA
-    username = "nicolas.lopes@sptech.school", #EMAIL
+    url = "", #URL DA EMPRESA
+    username = "", #EMAIL
     password = "" #TOKEN
 )
 
