@@ -7,11 +7,11 @@ import mysql.connector
 try:
     # Conexão com o banco
     mydb = mysql.connector.connect(
-        user='root', 
+        user='', 
         password='', 
-        host='localhost',
-        database='VaultWise',
-        port='3306',
+        host='',
+        database='',
+        port='',
         autocommit=True  # Garante que as alterações sejam confirmadas automaticamente
     )
 

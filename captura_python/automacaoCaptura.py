@@ -10,16 +10,16 @@ from requests import HTTPError
 jira = Jira(
     url = "https://vault-wise.atlassian.net", #URL DA EMPRESA
     username = "nicolas.lopes@sptech.school", #EMAIL
-    password = "ATATT3xFfGF0ym1f3zHairjYwt84NeHddfeAv287mj6iafa3HZa__pSsF_lVpNPtA7eawVaxnC1nUboyCqcrmXZnHqjI11f0OmCiE72w48xD6xs2f8fkJaM2X4BWsj6GTBsU6EmgG30cXnaezbxXlkSn_xln_rAnn4cJ5LWSVROuhB8fKWw0eHo=743EFEAD" #TOKEN
+    password = "" #TOKEN
 )
 
 #Conexão com o banco
 mydb = mysql.connector.connect(
-    user='root', 
+    user='', 
     password='', 
-    host='localhost',
-    database='VaultWise',
-    port='3306'
+    host='',
+    database='',
+    port=''
 )
 
 cursor = mydb.cursor()
