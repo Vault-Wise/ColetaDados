@@ -10,13 +10,13 @@ from requests import HTTPError
 jira = Jira(
     url = "https://vault-wise.atlassian.net", #URL DA EMPRESA
     username = "nicolas.lopes@sptech.school", #EMAIL
-    password = "-" #TOKEN
+    password = "ATATT3xFfGF0ym1f3zHairjYwt84NeHddfeAv287mj6iafa3HZa__pSsF_lVpNPtA7eawVaxnC1nUboyCqcrmXZnHqjI11f0OmCiE72w48xD6xs2f8fkJaM2X4BWsj6GTBsU6EmgG30cXnaezbxXlkSn_xln_rAnn4cJ5LWSVROuhB8fKWw0eHo=743EFEAD" #TOKEN
 )
 
 #Conexão com o banco
 mydb = mysql.connector.connect(
-    user='capturaDados', 
-    password='SPTech#2024', 
+    user='root', 
+    password='Viniciusop123', 
     host='localhost',
     database='VaultWise',
     port='3306'
@@ -35,7 +35,7 @@ else:
     disco = psutil.disk_usage('/')
 
 freqTotalProcessador = round(psutil.cpu_freq().max, 2)
-memortiaTotal = round(psutil.virtual_memory().total/pow(10, 9),0)
+memoriaTotal = round(psutil.virtual_memory().total/pow(10, 9),0)
 discoTotal = round(disco.total/pow(10, 9), 0)
 
 cursor.execute(f"SELECT * FROM CaixaEletronico WHERE nomeEquipamento = '{nomeMaquina}'")
@@ -43,8 +43,8 @@ cursor.execute(f"SELECT * FROM CaixaEletronico WHERE nomeEquipamento = '{nomeMaq
 for i in cursor.fetchall():
     print(i)
 
-if cursor.rowcount < 1: 
-    cursor.execute(f"INSERT INTO CaixaEletronico VALUES (default, '{nomeMaquina}', '{sistemaOperacional}', {memortiaTotal}, {discoTotal}, {freqTotalProcessador}, 1)") 
+if cursor.rowcount < 1:
+    cursor.execute(f"INSERT INTO CaixaEletronico VALUES (default, '{nomeMaquina}', '{sistemaOperacional}', {memoriaTotal}, {freqTotalProcessador}, 1)") 
     mydb.commit()
 
 cursor.execute(f"SELECT idCaixa FROM CaixaEletronico WHERE nomeEquipamento LIKE '{nomeMaquina}'")
@@ -63,11 +63,13 @@ while True:
     tempo_atividade = psutil.boot_time()
     rede = psutil.net_io_counters()
 
-    redeMB = ((rede.bytes_recv - rede.bytes_sent) * pow(10, -6))/ 60
+    redeMB_upload = ((rede.bytes_recv - rede.bytes_sent) * pow(10, -6))/ 60
+    redeMB_download = (rede.bytes_recv * pow(10, -6)) / 60
 
     tempo_atual = time.time()
 
     uptime_s = tempo_atual - tempo_atividade
+
 
     print(""" 
     DADOS ARMAZENADOS
@@ -92,8 +94,15 @@ while True:
 
     #Tempo de captura de dados
     time.sleep(intervalo)
-
-    cursor.execute(f"INSERT INTO Registro VALUES (DEFAULT, DEFAULT,{round(disco.percent, 2)}, {round(memoria.percent, 2)}, {round(porcent_cpu, 2)}, {round(memoria.used /pow(10,9), 2)}, {round(disco.used /pow(10,9), 2)}, {round(freq_cpu.current)}, {round(redeMB, 2)}, {uptime_s}, {idEquipamento})")
+    cursor.execute(f"""
+    INSERT INTO Registro 
+    (percentMemoria, percentProcessador, memoriaUsada, freqProcessador, 
+    velocidadeUpload, velocidadeDownload, tempoAtividade, fkCaixa)
+    VALUES 
+    ({round(memoria.percent, 2)}, {round(porcent_cpu, 2)}, 
+    {round(memoria.used / pow(10, 9), 2)}, {round(freq_cpu.current, 2)}, 
+    {round(redeMB_upload, 2)}, {round(redeMB_download, 2)}, {uptime_s}, {idEquipamento})
+    """)
     mydb.commit()
 
     cursor.execute(f"SELECT idRegistro FROM Registro ORDER BY idRegistro DESC LIMIT 1")
@@ -167,5 +176,5 @@ while True:
                     repeticao_CPU=0
         
 
-cursor.close()
-mydb.close()
+    cursor.close()
+    mydb.close()
