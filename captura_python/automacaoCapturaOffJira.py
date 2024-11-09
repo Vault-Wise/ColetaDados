@@ -8,7 +8,7 @@ try:
     # Conexão com o banco
     mydb = mysql.connector.connect(
         user='root', 
-        password='Viniciusop123', 
+        password='', 
         host='localhost',
         database='VaultWise',
         port='3306',
