@@ -1,14 +1,10 @@
-# VaultWise!
+## VaultWise API_Bucket <img height="25px" style="background-color= #5b0c0c;" src="https://github.com/Vault-Wise/Site_institucional/blob/main/public/css/imagens/logoComFundo.png">
 
-Projeto para garantir a operação ininterrupta e segura dos ATMs através de monitoramento contínuo e otimização de desempenho.
+<p> Este repositório é para conter arquivos remotos de teste que foram utilizados no api_bucket, contendo também o script de captura apenas com algo mais diferente do usual, com uma interface mais agradável.
+</p>
 
-## 🚀 Começando
+![Status](https://img.shields.io/badge/Status_do_projeto-Concluido-darkgreen) 
 
-Essas instruções permitirão que você obtenha uma cópia do projeto em operação na sua máquina local para fins de desenvolvimento e teste.
-
-### 📋 Pré-requisitos
-
-De que coisas você precisa para instalar o software e como instalá-lo?
-
-IDE (Visual code, Intellij.
-Python e Java instalado.
+![Github Badge](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
+![Github Badge](https://img.shields.io/badge/Amazon_AWS-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Github Badge](https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue)
